@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
 
-import static org.example.Utils.*;
 
 public class Main {
 
@@ -24,12 +24,19 @@ public class Main {
         for (int i = 0; i < texts.length; i++) {
             texts[i] = generateText("abc", LEN_LOWER_BOUND + random.nextInt(LEN_UPPER_BOUND - LEN_LOWER_BOUND));
         }
-        for (int i = LEN_LOWER_BOUND; i < LEN_UPPER_BOUND; i++) {
-            int finalI = i;
-            Thread thread = new Thread(() -> checkForBeauty(texts, finalI));
-            threads.add(thread);
-            thread.start();
-        }
+
+        Thread thread1 = new Thread(() -> checkForBeauty(texts, Utils::isPalindrome));
+        threads.add(thread1);
+        thread1.start();
+
+        Thread thread2 = new Thread(() -> checkForBeauty(texts, Utils::isLexicographicallyOrdered));
+        threads.add(thread2);
+        thread2.start();
+
+        Thread thread3 = new Thread(() -> checkForBeauty(texts, Utils::isSameLetter));
+        threads.add(thread3);
+        thread3.start();
+
         for (Thread thread : threads) {
             try {
                 thread.join();
@@ -51,10 +58,10 @@ public class Main {
         return text.toString();
     }
 
-    public static void checkForBeauty(String[] texts, int length) {
+    public static void checkForBeauty(String[] texts, Predicate<String> predicate) {
         for (String text : texts) {
-            if (text.length() == length && (isPalindrome(text) || isSameLetter(text) || isLexicographicallyOrdered(text))) {
-                switch (length) {
+            if (predicate.test(text)) {
+                switch (text.length()) {
                     case 3:
                         beautifulWordsOfLengthThreeCount.incrementAndGet();
                         break;
